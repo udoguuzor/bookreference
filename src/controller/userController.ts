@@ -10,6 +10,11 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
             res.status(400).json({ message: "Please provide all required fields: name, email, password, and phone number." });
             return;
         }
+        const findUser = await userModel.findOne({email})
+        if(findUser){
+            res.status(400).json({message:"user Already exist"})
+            return
+        }
 
         const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -18,7 +23,7 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
             email,
             password: hashedPassword,
             phoneNo,
-            // isLogin: false
+    
         });
 
         await user.save();
@@ -39,7 +44,7 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
             return;
         }
 
-        const user = await userModel.findOne({ email })
+        const user = await userModel.findOne({ email }).select("-password-__v")
 
         if (!user) {
             res.status(401).json({ error: "Invalid Credentials" })
@@ -57,10 +62,9 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
         await user.save()
 
         res.status(200).json({
-            message: "User Loggeedin successfully",
-            id: user._id, name: user.name,
-            email: user.email, isLogin: user.isLogin,
-            // data: user
+            message: "User Logged in successfully",
+            data:user
+            
         })
     }
     catch (err: any) {
@@ -90,7 +94,7 @@ export const getUser = async (req: Request, res: Response): Promise<void> => {
 export const getAllUsers = async(req:Request, res:Response):Promise<void>=>{
     try{
       const getUsers = await userModel.find()
-      res.status(200).json({message:"books user gotten successfully"})
+      res.status(200).json({message:"books user gotten successfully", data:getUsers})
     }catch(err:any){
         res.status(500).json({message:"An error occured trying to get user", err:err.message})
         return
